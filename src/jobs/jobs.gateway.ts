@@ -1,29 +1,53 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody , WebSocketServer} from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage, MessageBody , WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, ConnectedSocket} from '@nestjs/websockets';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { OnModuleInit } from "@nestjs/common";
-import { Server } from "socket.io";
+import { Logger, OnModuleInit } from "@nestjs/common";
+import { Socket,Namespace } from "socket.io";
+import { Job } from './entities/job.entity';
 
-@WebSocketGateway()
-export class JobsGateway {
+@WebSocketGateway({
+  namespace:'jobs',
+})
+export class JobsGateway implements OnGatewayConnection,OnGatewayDisconnect,OnGatewayInit{
+  private readonly logger = new Logger(JobsGateway.name);
   constructor(private readonly jobsService: JobsService) {}
-
+  private socketToRoomMap = {};
+  
   @WebSocketServer()
-  server: Server
+  io: Namespace;
 
-  onModuleInit() {
-      this.server.on('connection',(socket) =>{
-          console.log(socket.id);
-          console.log("Connected");
-      })
+
+  afterInit(): void {
+    this.logger.log("Jobs Gateway initialised.");
+  }
+ 
+  handleConnection(client: Socket) {
+    const sockets = this.io.sockets;
+    
+    this.logger.log(`WebSocket Client with id: ${client.data['user'].id} connected.`);
+    this.logger.log(`Amount of connected sockets: ${sockets.size}`)
+
+  }
+  handleDisconnect(client: Socket) {
+    const sockets = this.io.sockets;
+    this.logger.log(`WebSocket Client with id: ${client.id} connected.`);
+    this.logger.log(`Amount of connected sockets: ${sockets.size}`)
+    
   }
 
-
-
+  
   @SubscribeMessage('createJob')
-  create(@MessageBody() createJobDto: CreateJobDto) {
-    return this.jobsService.create(createJobDto);
+  async create( @MessageBody() createJobDto: CreateJobDto,
+                @ConnectedSocket() client: Socket,      
+  ): Promise<void> {
+    const createdJob : Job = await this.jobsService.create(createJobDto);
+    
+    client.rooms.forEach((room) => {
+      this.io.in(room).emit(("jobCreated"),createdJob);
+    })
+    
+    
   }
 
   @SubscribeMessage('findAllJobs')

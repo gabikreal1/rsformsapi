@@ -1,34 +1,33 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody } from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { Socket,Namespace } from "socket.io";
 
-@WebSocketGateway()
+
+@WebSocketGateway({
+  namespace:'companies',
+})
 export class CompaniesGateway {
   constructor(private readonly companiesService: CompaniesService) {}
 
   @SubscribeMessage('createCompany')
-  create(@MessageBody() createCompanyDto: CreateCompanyDto) {
-    return this.companiesService.create(createCompanyDto);
-  }
-
-  @SubscribeMessage('findAllCompanies')
-  findAll() {
-    return this.companiesService.findAll();
+  async create(@MessageBody() createCompanyDto: CreateCompanyDto )  {
+    return await this.companiesService.create(createCompanyDto);
   }
 
   @SubscribeMessage('findOneCompany')
-  findOne(@MessageBody() id: number) {
+  async findOne(@MessageBody() id: string) {
     return this.companiesService.findOne(id);
   }
 
   @SubscribeMessage('updateCompany')
-  update(@MessageBody() updateCompanyDto: UpdateCompanyDto) {
-    return this.companiesService.update(updateCompanyDto.id, updateCompanyDto);
+  async update(@MessageBody() updateCompanyDto: UpdateCompanyDto) {
+    return await this.companiesService.update(updateCompanyDto.id, updateCompanyDto);
   }
 
   @SubscribeMessage('removeCompany')
-  remove(@MessageBody() id: number) {
-    return this.companiesService.remove(id);
+  async remove(@MessageBody() id: string) {
+    return await this.companiesService.remove(id);
   }
 }

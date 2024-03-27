@@ -1,0 +1,67 @@
+CREATE TABLE "Company" (
+  "id" VARCHAR(64) PK,
+  "name" VARCHAR(255),
+  "address" VARCHAR(255),
+  "city" VARCHAR(255),
+  "postcode" VARCHAR(255),
+  "phoneNumber" VARCHAR(255),
+  "bankName" VARCHAR(255),
+  "accountNumber" VARCHAR(255),
+  "sortCode" VARCHAR(255),
+  "invoiceCounter" INT,
+  "ownerUserId" VARCHAR(64),
+  "shareKey" VARCHAR(64),
+  "jobDetailsTemplate" JSON
+);
+
+CREATE TABLE "RsUser" (
+  "id" VARCHAR(64) PK,
+  "companyId" VARCHAR(64) FK,
+  "firstname" VARCHAR(255),
+  "lastname" VARCHAR(255),
+  "fcmToken" VARCHAR(255)
+);
+
+CREATE TABLE "Job" (
+  "id" VARCHAR(64) PK,
+  "companyId" VARCHAR(64) FK,
+  "contractorId" VARCHAR(64) FK,
+  "client" VARCHAR(255),
+  "description" VARCHAR(1024),
+  "address" VARCHAR(255),
+  "postcode" VARCHAR(255),
+  "contactNumber" VARCHAR(255),
+  "startTime" BIGINT,
+  "endTime" BIGINT,
+  "completed" BOOLEAN,
+  "price" FLOAT,
+  "invoiceNumber" INT,
+  "pictures" JSON,
+  "additionalJobDetails" JSON,
+  "lastUpdatedTime" BIGINT,
+  "removed" BOOLEAN
+);
+
+CREATE TABLE "Service" (
+  "id" VARCHAR(64) PK,
+  "jobId" VARCHAR(64) FK,
+  "type" ENUM('SERVICE','PART'),
+  "description" VARCHAR(1024),
+  "quantity" INT,
+  "price" FLOAT,
+  "vatRate" FLOAT
+);
+
+CREATE TABLE "Contractor" (
+  "id" VARCHAR(64) PK,
+  "companyId" VARCHAR(64) FK,
+  "contractorName" VARCHAR(255),
+  "location" POINT(x,y)
+);
+
+CREATE TABLE "FrequentClient" (
+  "id" VARCHAR(64) PK,
+  "companyId" VARCHAR(64) FK,
+  "clientName" VARCHAR(255)
+);
+
