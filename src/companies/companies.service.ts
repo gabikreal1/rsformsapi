@@ -5,7 +5,6 @@ import { EntityManager, Repository } from 'typeorm';
 import { Company } from './entities/company.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
-
 @Injectable()
 export class CompaniesService {
   private readonly logger = new Logger(CompaniesService.name);
@@ -16,25 +15,19 @@ export class CompaniesService {
 
 
   async create(createCompanyDto: CreateCompanyDto)  {
-    
-    const company = new Company(createCompanyDto);
-    
-    return await this.entityManager.save(company);
+    return await this.companiesRepository.save(createCompanyDto);
   }
 
-
-
   async findOne(id: string) {
-    const res =  await this.companiesRepository.findOneBy({id});
-    return res;
+    return await this.companiesRepository.findOneBy({id});
   }
 
   async update(id: string, updateCompanyDto: UpdateCompanyDto) {
 
-    return await this.entityManager.update(Company,id,updateCompanyDto);
+    return await this.companiesRepository.update(id,updateCompanyDto);
   }
 
   async remove(id: string) {
-    return await this.entityManager.delete(Company,id);
+     await this.companiesRepository.delete(id);
   }
 }

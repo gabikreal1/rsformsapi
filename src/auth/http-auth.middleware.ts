@@ -11,7 +11,6 @@ export class HttpAuthGuard implements NestMiddleware{
         this.defaultApp = firebaseProvider.provideFirebaseApp();
     }
 
-
     use(req: Request, res: Response, next: Function) {
         const token = req.headers.authorization;
 

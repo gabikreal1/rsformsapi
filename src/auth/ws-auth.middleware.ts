@@ -11,12 +11,11 @@ import { log } from 'console';
 export class WSAuthGuard implements NestMiddleware{
     private readonly logger = new Logger(WSAuthGuard.name);
     private defaultApp: app.App;
-    
 
     constructor(private readonly firebaseProvider: FirebaseProvider) {
         this.defaultApp = firebaseProvider.provideFirebaseApp();
     }
-
+    
     use(socket:Socket, next: Function) {
         const token = socket.handshake.headers.authorization || socket.handshake.headers["authorization"];
         if(token != null && token != ''){

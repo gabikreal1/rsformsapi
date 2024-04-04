@@ -56,14 +56,12 @@ export class Company {
     }
 
     
-
-    getShareKey(): string{
-        return this.shareKey || nanoid();
-    }
-    
     getId(): string{
         return this.id || nanoid();
     }
 
+    getShareKey(): string{
+        return this.shareKey || nanoid();
+    }
 
 }
