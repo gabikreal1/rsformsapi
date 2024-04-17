@@ -1,1 +1,6 @@
-export class CreateJobDto {}
+export class CreateJobDto {
+
+
+    
+
+}

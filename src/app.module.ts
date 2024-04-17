@@ -9,9 +9,10 @@ import { ServicesModule } from './services/services.module';
 import { ConfigModule } from '@nestjs/config';
 import { FirebaseProvider } from './auth/firebase.provider';
 import { PostgresDbModule } from './postgres-db/postgres-db.module'
+import { PicturesModule } from './pictures/pictures.module';
 @Module({
   imports: [ConfigModule.forRoot({isGlobal:true}),
-    UsersModule, CompaniesModule, JobsModule, ServicesModule,PostgresDbModule],
+    UsersModule, CompaniesModule, JobsModule, ServicesModule,PostgresDbModule, PicturesModule],
   controllers: [AppController],
   providers: [AppService,FirebaseProvider],
 })

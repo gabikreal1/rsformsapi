@@ -20,6 +20,5 @@ export class CreateCompanyDto {
 
     ownerUserId: string;
 
-    
 
 }

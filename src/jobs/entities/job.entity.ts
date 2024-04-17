@@ -1,15 +1,15 @@
-import { BeforeInsert, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
-import { nanoid } from 'nanoid';
+import {  Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { Company } from "src/companies/entities/company.entity";
+import { AbstractEntity } from "src/postgres-db/abstract.entity";
 
 @Entity()
-export class Job {
-
-    @PrimaryColumn()
-    id : string;
+export class Job extends AbstractEntity<Job> {
 
     @Column()
     client: string;
+
+    @Column()
+    agent : string;
 
     @Column({nullable: true})
     address: string;
@@ -42,7 +42,7 @@ export class Job {
     additionalJobDetails: JSON;
 
     @Column({nullable:false})
-    lastUpdatedTime: BigInt;
+    lastUpdatedTime: number;
 
     @Column({nullable:true})
     removed: Boolean;
@@ -51,16 +51,6 @@ export class Job {
     @JoinColumn()
     company: Company;
 
-    constructor(company: Partial<Job>){
-        Object.assign(this,company);
-    }
 
-    @BeforeInsert()
-    private beforeInsert(){
-        this.id = this.getId();
-    }
 
-    getId(): string{
-        return this.id || nanoid();
-    }
 }

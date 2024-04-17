@@ -2,17 +2,18 @@ import { WebSocketGateway, SubscribeMessage, MessageBody , WebSocketServer, OnGa
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { Logger, OnModuleInit } from "@nestjs/common";
-import { Socket,Namespace } from "socket.io";
-import { Job } from './entities/job.entity';
+import { Logger } from "@nestjs/common";
+import { Namespace } from "socket.io";
+import { SocketWithAuth } from 'src/auth/auth-extensions';
+import { UsersService } from 'src/users/users.service';
 
 @WebSocketGateway({
   namespace:'jobs',
 })
 export class JobsGateway implements OnGatewayConnection,OnGatewayDisconnect,OnGatewayInit{
+  constructor(private readonly jobsService: JobsService, private readonly userService: UsersService) {}
   private readonly logger = new Logger(JobsGateway.name);
-  constructor(private readonly jobsService: JobsService) {}
-  private socketToRoomMap = {};
+
   
   @WebSocketServer()
   io: Namespace;
@@ -22,51 +23,62 @@ export class JobsGateway implements OnGatewayConnection,OnGatewayDisconnect,OnGa
     this.logger.log("Jobs Gateway initialised.");
   }
  
-  handleConnection(client: Socket) {
-    const sockets = this.io.sockets;
+  async handleConnection(client: SocketWithAuth)  {
     
-    this.logger.log(`WebSocket Client with id: ${client.data['user'].id} connected.`);
-    this.logger.log(`Amount of connected sockets: ${sockets.size}`)
+    try{
+      const companyId : string = (await this.userService.findOne(client.userId)).company.id;
+      client.join(companyId);
+      client.data['company'] = companyId;
+    }
+    catch{
+      client.send("user-company-relation-empty");
+      client.disconnect();
+    }    
 
   }
-  handleDisconnect(client: Socket) {
-    const sockets = this.io.sockets;
-    this.logger.log(`WebSocket Client with id: ${client.id} connected.`);
-    this.logger.log(`Amount of connected sockets: ${sockets.size}`)
-    
+
+  handleDisconnect(client: SocketWithAuth) {
+    return;
   }
 
   
   @SubscribeMessage('createJob')
   async create( @MessageBody() createJobDto: CreateJobDto,
-                @ConnectedSocket() client: Socket,      
-  ): Promise<void> {
-    const createdJob : Job = await this.jobsService.create(createJobDto);
-    
-    client.rooms.forEach((room) => {
-      this.io.in(room).emit(("jobCreated"),createdJob);
-    })
-    
-    
-  }
+                @ConnectedSocket() client: SocketWithAuth,): Promise<void> {
 
-  @SubscribeMessage('findAllJobs')
-  findAll() {
-    return this.jobsService.findAll();
+    const createdJob = await this.jobsService.create(createJobDto);
+    this.emitMessageToRoom(client,"createdJob",createdJob);
+
   }
 
   @SubscribeMessage('findOneJob')
-  findOne(@MessageBody() id: number) {
+  findOne(@MessageBody() id: string) {
     return this.jobsService.findOne(id);
   }
 
+  @SubscribeMessage('findLatestJobs')
+  async findLatestJobs(@MessageBody() lastUpdatedTime: number ){
+    return await this.jobsService.findLatestJobs(lastUpdatedTime);
+    
+  }
+
+
   @SubscribeMessage('updateJob')
-  update(@MessageBody() updateJobDto: UpdateJobDto) {
-    return this.jobsService.update(updateJobDto.id, updateJobDto);
+  async update(@MessageBody() updateJobDto: UpdateJobDto, @ConnectedSocket() client: SocketWithAuth) {
+    const updatedJob = await this.jobsService.update(updateJobDto.id,updateJobDto);
+    this.emitMessageToRoom(client,"updatedJob",updatedJob);
+
   }
 
   @SubscribeMessage('removeJob')
-  remove(@MessageBody() id: number) {
-    return this.jobsService.remove(id);
+  async remove(@MessageBody() id: string,@ConnectedSocket() client: SocketWithAuth ) {
+
+    const removedJob = await this.jobsService.remove(id);
+    this.emitMessageToRoom(client,"removedJob",removedJob);
+    
+  }
+
+  emitMessageToRoom(client: SocketWithAuth,message: string, body: any){
+    client.in(client.data['company']).emit((message),body);
   }
 }

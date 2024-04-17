@@ -1,34 +1,61 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody } from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, ConnectedSocket } from '@nestjs/websockets';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Namespace } from "socket.io";
+import { Logger } from '@nestjs/common';
+import { SocketWithAuth } from 'src/auth/auth-extensions';
 
 @WebSocketGateway()
-export class UsersGateway {
+export class UsersGateway implements OnGatewayConnection,OnGatewayDisconnect,OnGatewayInit {
   constructor(private readonly usersService: UsersService) {}
 
+  private readonly logger = new Logger(UsersGateway.name);
+
+  
+  @WebSocketServer()
+  io: Namespace;
+
+
+  afterInit(): void {
+    this.logger.log("Users Gateway initialised.");
+  }
+ 
+  handleConnection(client: SocketWithAuth) {
+    const sockets = this.io.sockets;
+    
+    this.logger.log(`WebSocket Client with id: ${client.userId} connected.`);
+    this.logger.log(`Amount of connected sockets: ${sockets.size}`)
+  }
+
+  handleDisconnect(client: SocketWithAuth) {
+    const sockets = this.io.sockets;
+    this.logger.log(`WebSocket Client with id: ${client.userId} connected.`);
+    this.logger.log(`Amount of connected sockets: ${sockets.size}`)
+  }
+
+  
   @SubscribeMessage('createUser')
-  create(@MessageBody() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async create(@MessageBody() createUserDto: CreateUserDto,
+          @ConnectedSocket() client: SocketWithAuth,) {
+    createUserDto.id =  client.userId;
+    createUserDto.email = client.email;
+    return await this.usersService.create(createUserDto);
   }
-
-  @SubscribeMessage('findAllUsers')
-  findAll() {
-    return this.usersService.findAll();
-  }
-
+ 
   @SubscribeMessage('findOneUser')
-  findOne(@MessageBody() id: number) {
-    return this.usersService.findOne(id);
+  findOne(@ConnectedSocket() client: SocketWithAuth,) {
+    return this.usersService.findOne(client.userId);
   }
 
   @SubscribeMessage('updateUser')
   update(@MessageBody() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(updateUserDto.id, updateUserDto);
+    return this.usersService.update(updateUserDto);
   }
 
   @SubscribeMessage('removeUser')
-  remove(@MessageBody() id: number) {
-    return this.usersService.remove(id);
+  remove(@ConnectedSocket() client: SocketWithAuth,) {
+    return this.usersService.remove(client.userId);
   }
+
 }

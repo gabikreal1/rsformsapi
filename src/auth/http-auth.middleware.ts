@@ -1,7 +1,8 @@
 import {Inject, Injectable, NestMiddleware} from '@nestjs/common';
-import {Request, Response} from 'express';
+import { Response} from 'express';
 import { app } from 'firebase-admin';
 import { FirebaseProvider } from './firebase.provider';
+import { RequestWithAuth } from './auth-extensions';
 
 @Injectable()
 export class HttpAuthGuard implements NestMiddleware{
@@ -11,16 +12,14 @@ export class HttpAuthGuard implements NestMiddleware{
         this.defaultApp = firebaseProvider.provideFirebaseApp();
     }
 
-    use(req: Request, res: Response, next: Function) {
+    use(req: RequestWithAuth, res: Response, next: Function) {
         const token = req.headers.authorization;
 
         if(token != null && token != ''){
             this.defaultApp.auth().verifyIdToken(token.replace('Bearer ',''))
             .then(async decodedToken => {
-                const user = {
-                    id: decodedToken.client_id,
-                }
-                req['user'] = user;
+                req.userId = decodedToken.uid;
+                req.email = decodedToken.email;
                 next();
              }).catch(error => {
                 console.error(error);
@@ -36,7 +35,6 @@ export class HttpAuthGuard implements NestMiddleware{
     private accesDenied(url: string, res: Response) {
         res.status(401).json({
             statusCode:401,
-            timestamp: new Date().toISOString(),
             path:url,
             message:'Access Denied'
         })

@@ -1,10 +1,10 @@
-import { BeforeInsert, Column, Entity, PrimaryColumn } from "typeorm";
+import { BeforeInsert, Column, Entity, JoinColumn, OneToMany, PrimaryColumn } from "typeorm";
 import { nanoid } from 'nanoid';
+import { AbstractEntity } from "src/postgres-db/abstract.entity";
+import { User } from "src/users/entities/user.entity";
 
 @Entity()
-export class Company {
-    @PrimaryColumn()
-    id: string;
+export class Company extends AbstractEntity<Company> {
 
     @Column()
     name: string;
@@ -42,23 +42,8 @@ export class Company {
     @Column({type:'json',nullable:true})
     jobDetailsTemplate: JSON;
 
-
-    constructor(company: Partial<Company>){
-        Object.assign(this,company);
-    }
-
-
-
-    @BeforeInsert()
-    private beforeInsert(){
-        this.id = this.getId();
-        this.shareKey = this.getShareKey();
-    }
-
-    
-    getId(): string{
-        return this.id || nanoid();
-    }
+    @OneToMany(()=>User,(user)=>user.company,{cascade:["insert","update"]})
+    users: User[];
 
     getShareKey(): string{
         return this.shareKey || nanoid();
