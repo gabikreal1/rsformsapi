@@ -1,11 +1,11 @@
-import { Company } from "src/companies/entities/company.entity";
+import { Company } from 'src/companies/entities/company.entity';
 
 export class CreateUserDto {
-    id? : string;
+  id?: string;
 
-    email?: string;
+  email?: string;
 
-    fcmToken? :string;
+  fcmToken?: string;
 
-    company? : Company;
+  company?: Company;
 }

@@ -2,6 +2,7 @@ import { BeforeInsert, Column, Entity, JoinColumn, OneToMany, PrimaryColumn } fr
 import { nanoid } from 'nanoid';
 import { AbstractEntity } from "src/postgres-db/abstract.entity";
 import { User } from "src/users/entities/user.entity";
+import { Job } from "src/jobs/entities/job.entity";
 
 @Entity()
 export class Company extends AbstractEntity<Company> {
@@ -42,11 +43,23 @@ export class Company extends AbstractEntity<Company> {
     @Column({type:'json',nullable:true})
     jobDetailsTemplate: JSON;
 
-    @OneToMany(()=>User,(user)=>user.company,{cascade:["insert","update"]})
+    @OneToMany(()=>User,(user)=>user.company,{cascade:["insert","update"],eager:true})
+    @JoinColumn()
     users: User[];
 
-    getShareKey(): string{
-        return this.shareKey || nanoid();
+    @OneToMany(()=>Job,(job)=>job.company,{cascade:["insert","update"]})
+    @JoinColumn()
+    jobs: Job[];
+    
+    constructor(entity: Partial<Company>){
+
+        super(entity);
+        this.shareKey = this.shareKey ?? nanoid();
+
     }
+    
+
+
+
 
 }

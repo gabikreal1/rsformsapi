@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
-import { EntityManager, Repository, UpdateResult } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Company } from './entities/company.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
@@ -12,62 +12,131 @@ export class CompaniesService {
   constructor(
     @InjectRepository(Company)
     private readonly companiesRepository: Repository<Company>,
-    private readonly entityManager:EntityManager){}
+    private readonly entityManager: EntityManager,
+  ) {}
 
-
-  async create(creatorId: string, createCompanyDto: CreateCompanyDto)  {
+  async create(creatorId: string, createCompanyDto: CreateCompanyDto) {
     createCompanyDto.ownerUserId = creatorId;
-    const company: Company = await this.companiesRepository.save(createCompanyDto);
-    await this.addUserToCompany(creatorId,company.id);
-    return company;    
+    const company: Company = this.companiesRepository.create(createCompanyDto);
+    const res =  await this.companiesRepository.save(company);
+    console.log(company);
+    return await this.addUserToCompany(creatorId, res.id);
+    
   }
 
   async findOne(id: string) {
-    return await this.entityManager.findOne(Company,{where:{id},relations:{users:true}});
+    if(id == null || id == undefined){
+      return;
+    }
+    var res=  await this.companiesRepository.findOne( {
+      where: { id:id },
+      relations: { users: true },
+    });
+    console.log(res)
+    return res;
   }
 
-  async update(updateCompanyDto: UpdateCompanyDto): Promise<Company>  {
+  async update(updateCompanyDto: UpdateCompanyDto): Promise<Company> {
     return await this.companiesRepository.save(updateCompanyDto);
   }
-
-  async joinCompany(userId : string , shareKey: string): Promise<void>  {
-    const company = await this.companiesRepository.findOneBy({shareKey}).catch((reason) => {return reason;});
-    await this.addUserToCompany(userId,company.id);
+  //
+  async joinCompany(userId: string, shareKey: string): Promise<Company> {
+    console.log(shareKey);
+    const company = await this.companiesRepository
+      .findOneBy({ shareKey : shareKey })
+      .catch((reason) => {
+        return reason;
+      });
+    console.log(company);
+    return await this.addUserToCompany(userId, company.id);
   }
 
-  async addUserToCompany(userId: string, companyId : string): Promise<void> {
-    const user : User = await this.entityManager.findOneBy(User,{id:userId});
-    if(user.company == null){
-      const company : Company = await this.findOne(companyId);
+  async addUserToCompany(userId: string, companyId: string): Promise<Company> {
+    const user: User = await this.entityManager.findOneBy(User, { id: userId });
+    console.log(user);
+    if (user.company == null) {
+      const company: Company = await this.findOne(companyId);
+      console.log(company);
+      if(company.users == null){
+        company.users = [];
+      }
       company.users.push(user);
-      this.companiesRepository.update(companyId,company);
+      await this.companiesRepository.save(company);
+      return this.companiesRepository.findOne({where:{id:company.id},relations:{users:true}});
     }
+
+    return user.company;
   }
 
-  async removeUserFromCompany(requestUserId: string, userToRemoveId:string){
-    const user : User = await this.entityManager.findOneBy(User,{id:userToRemoveId});
-    if(user.company == null){
-      return
+  async incrementInvoiceCounter(companyId: string){
+    const company : Company = await this.companiesRepository.findOneBy({id:companyId});
+    company.invoiceCounter += 1
+    return await this.companiesRepository.save(company);
+  } 
+
+
+  async removeUserFromCompany(
+    requestUserId: string,
+    userToRemoveEmail: string,
+  ): Promise<Company> {
+    const user: User = await this.entityManager.findOne(User, {
+      where: { email: userToRemoveEmail },
+      relations: { company: true },
+    });
+    if (user.company == null) {
+      return;
     }
-    const company: Company =  user.company;
-    if(company.ownerUserId == requestUserId || userToRemoveId == requestUserId){
+    const company: Company = user.company;
+    if (company.ownerUserId == requestUserId || user.id == requestUserId) {
       user.company = null;
-      return await this.entityManager.update(User, user.id, user);
-    } 
-    return;
+      await this.entityManager.update(User, user.id, user);
+      return this.companiesRepository.findOne({
+        where: { id: company.id },
+        relations: { users: true },
+      });
+    }
+    return company;
   }
 
-  
+
+  async promoteUserToOwner(
+    requestUserId : string,
+    userToPromoteEmail:string,
+  ){
+    const user: User = await this.entityManager.findOne(User, {
+      where: { email: userToPromoteEmail },
+      relations: { company: true },
+    });
+    if (user.company == null) {
+      return;
+    }
+    const company: Company = user.company;
+    if (company.ownerUserId == requestUserId ) {
+      company.ownerUserId = user.id;
+      await this.entityManager.update(Company, company.id, company);
+      return this.companiesRepository.findOne({
+        where: { id: user.company.id },
+        relations: { users: true },
+      });
+    }
+    return company;
+
+
+  }
 
   async remove(userId: string, companyId: string): Promise<void> {
-    if(await this.checkIfUserIsOwnerOfCompany(userId,companyId)){
+    if (await this.checkIfUserIsOwnerOfCompany(userId, companyId)) {
       await this.companiesRepository.delete(companyId);
     }
   }
-  
 
-  async checkIfUserIsOwnerOfCompany(userId:string,companyId: string ): Promise<Boolean>{
-    const company: Company = await this.companiesRepository.findOneBy({id:companyId});
+  async checkIfUserIsOwnerOfCompany(
+    userId: string,
+    companyId: string,
+  ): Promise<boolean> {
+    const company: Company = await this.companiesRepository.findOneBy({
+      id: companyId,
+    });
     return userId == company.ownerUserId;
   }
 }

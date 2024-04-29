@@ -1,4 +1,4 @@
-import {Inject, Injectable, NestMiddleware} from '@nestjs/common';
+import { Injectable, NestMiddleware} from '@nestjs/common';
 import { Response} from 'express';
 import { app } from 'firebase-admin';
 import { FirebaseProvider } from './firebase.provider';
@@ -13,6 +13,7 @@ export class HttpAuthGuard implements NestMiddleware{
     }
 
     use(req: RequestWithAuth, res: Response, next: Function) {
+        console.log(req);
         const token = req.headers.authorization;
 
         if(token != null && token != ''){
