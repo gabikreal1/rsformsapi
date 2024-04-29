@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
-import * as serviceAccount from './rsforms-6e943-firebase-adminsdk-5ecaz-e232ab4ef4.json';
+import * as serviceAccount from './../../rsforms-6e943-firebase-adminsdk-vwaf2-a5673876d7.json';
 
 
 
