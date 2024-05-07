@@ -35,17 +35,7 @@ export class JobsService {
     });
   }
   async findAllJobs(companyId : string) {
-    console.log(companyId);
-    
-
-    const queryBuilder = this.jobsRepository.createQueryBuilder('job')
-    .leftJoinAndSelect('job.company', 'company')
-    .where('company.id = :companyId', { companyId: companyId });
-
-    const company: Company = await this.entityManager.findOne(Company,{where:{id:companyId},relations:{jobs:true}});
     const res = (await this.entityManager.findOne(Company,{where:{id:companyId},relations:{jobs:true}})).jobs;
-    console.log(res)
-    console.log(company)
     return res
   }
 
@@ -58,12 +48,10 @@ export class JobsService {
     const job: Job = await this.jobsRepository.findOneBy({ id });
     job.removed = true;
     job.lastUpdatedTime = Date.now();
-
     return await this.jobsRepository.save(job);
   }
 
 
-  /// Could've been anouther gateway, But job and pictures are closely related
   async fetchAllPictures(jobId) : Promise<string[]> {
     var response: string[] = [];
     (await this.jobsRepository.findOne({where:{id:jobId},relations:{pictures:true} })).pictures.forEach((picture: Picture ) => {response.push(picture.id)});

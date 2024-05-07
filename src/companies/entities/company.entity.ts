@@ -40,8 +40,6 @@ export class Company extends AbstractEntity<Company> {
     @Column()
     shareKey: string;
     
-    @Column({type:'json',nullable:true})
-    jobDetailsTemplate: JSON;
 
     @OneToMany(()=>User,(user)=>user.company,{cascade:["insert","update"],eager:true})
     @JoinColumn()
@@ -52,14 +50,9 @@ export class Company extends AbstractEntity<Company> {
     jobs: Job[];
     
     constructor(entity: Partial<Company>){
-
         super(entity);
         this.shareKey = this.shareKey ?? nanoid();
-
     }
     
-
-
-
 
 }

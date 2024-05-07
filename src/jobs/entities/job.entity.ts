@@ -4,17 +4,11 @@ import { AbstractEntity } from 'src/postgres-db/abstract.entity';
 import { Service } from 'src/services/entities/service.entity';
 import { Picture } from './picture.entity';
 
-//To treatBigInts
-class ColumnNumberTransformer {
+class longTransformer {
   public to(data: number): number {
       return data;
   }
-
   public from(data: string): number {
-      // output value, you can use Number, parseFloat variations
-      // also you can add nullable condition:
-      // if (!Boolean(data)) return 0;
-
       return parseInt(data);
   }
 }
@@ -38,10 +32,10 @@ export class Job extends AbstractEntity<Job> {
   @Column({ nullable: true })
   contactNumber: string;
 
-  @Column({ nullable: false, type:"bigint" ,transformer : new ColumnNumberTransformer()})
+  @Column({ nullable: false, type:"bigint" ,transformer : new longTransformer()})
   startTime: number;
 
-  @Column({ nullable: false , type:"bigint",transformer : new ColumnNumberTransformer()})
+  @Column({ nullable: false , type:"bigint",transformer : new longTransformer()})
   endTime: number;
 
   @Column({ default : false })
@@ -60,7 +54,7 @@ export class Job extends AbstractEntity<Job> {
   jobNo: string;
 
 
-  @Column({ nullable: false,type:"bigint",transformer : new ColumnNumberTransformer()})
+  @Column({ nullable: false,type:"bigint",transformer : new longTransformer()})
   lastUpdatedTime: number;
 
   @Column({ nullable: true })

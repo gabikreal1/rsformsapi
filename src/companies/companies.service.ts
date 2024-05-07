@@ -19,9 +19,7 @@ export class CompaniesService {
     createCompanyDto.ownerUserId = creatorId;
     const company: Company = this.companiesRepository.create(createCompanyDto);
     const res =  await this.companiesRepository.save(company);
-    console.log(company);
     return await this.addUserToCompany(creatorId, res.id);
-    
   }
 
   async findOne(id: string) {
@@ -39,7 +37,7 @@ export class CompaniesService {
   async update(updateCompanyDto: UpdateCompanyDto): Promise<Company> {
     return await this.companiesRepository.save(updateCompanyDto);
   }
-  //
+  
   async joinCompany(userId: string, shareKey: string): Promise<Company> {
     console.log(shareKey);
     const company = await this.companiesRepository
@@ -53,10 +51,8 @@ export class CompaniesService {
 
   async addUserToCompany(userId: string, companyId: string): Promise<Company> {
     const user: User = await this.entityManager.findOneBy(User, { id: userId });
-    console.log(user);
     if (user.company == null) {
       const company: Company = await this.findOne(companyId);
-      console.log(company);
       if(company.users == null){
         company.users = [];
       }

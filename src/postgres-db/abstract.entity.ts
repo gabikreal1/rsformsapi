@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { BeforeInsert, PrimaryColumn } from "typeorm";
 
-export class AbstractEntity<T>{
+export abstract class AbstractEntity<T>{
     @PrimaryColumn()
     id: string;
     constructor(entity: Partial<T>){

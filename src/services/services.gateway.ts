@@ -43,7 +43,6 @@ export class ServicesGateway {
     this.emitMessageToRoom(client,"serviceRemoved",services);
   }
 
-  /// Create a new typedef with jobId payload for services namespace
 
   emitMessageToRoom(client: SocketWithAuth, message: string, body: any) {
     this.io.in(client.data['jobId']).emit(message, body);

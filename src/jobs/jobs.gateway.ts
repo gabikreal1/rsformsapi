@@ -42,8 +42,6 @@ export class JobsGateway
     try {
       const companyId: string = (await this.userService.findOne(client.userId))
         .company.id;
-      Logger.log(companyId);
-      
       await client.join(companyId);
     
     } catch {
@@ -120,7 +118,6 @@ export class JobsGateway
     }
 
   async emitMessageToRoom(client: SocketWithAuth, message: string, body: any)  {
-    console.log(await this.getCompanyOutOfSocket(client));
     this.io.in(await this.getCompanyOutOfSocket(client)).emit(message, body);
   }
 }

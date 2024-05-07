@@ -18,8 +18,6 @@ import { User } from 'src/users/entities/user.entity';
 import { Logger } from '@nestjs/common';
 import { Company } from './entities/company.entity';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { Column } from 'typeorm';
-import { log } from 'console';
 
 @WebSocketGateway({
   namespace: 'companies',
@@ -42,7 +40,6 @@ export class CompaniesGateway
   async handleConnection(client: SocketWithAuth) {
     this.logger.log(`Client connected ${client.userId}`);
     if ((await this.userService.findOne(client.userId)) == null) {
-      console.log("here");
       const createUserDto: CreateUserDto = new CreateUserDto();
       createUserDto.id = client.userId;
       createUserDto.email = client.email;
@@ -145,14 +142,11 @@ export class CompaniesGateway
   /// Create a new typedef with companyId payload for companies namespace
 
   async emitMessageToRoom(client: SocketWithAuth, message: string, body: any)  {
-    console.log(client.data["company"]);
-    console.log((await this.io.in(client.data["company"]).fetchSockets()).length);
     this.io.in(client.data['company']).emit(message, body);
   }
 
   async matchClientToCompanyRoom(client: SocketWithAuth) {
     const user: User = await this.userService.findOne(client.userId);
-    log(user);
     if (user?.company != null) {
       client.join(user.company.id);
       client.data['company'] = user.company.id;
